@@ -19,7 +19,7 @@ class WebInputReader(url: String, authCookie: Option[String] = None) {
     if (response.isError) {
       Left(response.code + ": " + response.body)
     } else {
-      Right(response.body)
+      Right(response.body.trim)
     }
   }
 }
