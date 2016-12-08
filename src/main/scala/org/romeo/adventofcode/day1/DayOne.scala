@@ -55,19 +55,22 @@ object DayOne {
 
 class DayOne extends Puzzle("http://adventofcode.com/2016/day/1/input") {
 
+  override def validateInput(input: String): Unit = {
+    assert(input.split(", ").map(_.splitAt(1)).forall {
+      case (turn, number) => {
+        (turn == "L" || turn == "R") &&
+          number.forall(Character.isDigit)
+      }
+    })
+  }
+
   override def solvePart1(input: String): String = {
 
     val directions = input.split(", ").map(_.splitAt(1))
-    assert(directions.forall{
-      case (turn, number) => {
-        (turn == "L" || turn == "R") &&
-        number.forall(Character.isDigit)
-      }
-    })
 
-    val finalLocation = directions.foldLeft[Person](Person()){
+    val finalLocation = directions.foldLeft[Person](Person()) {
       case (p, (turn, num)) => {
-//        println(s"$p turning $turn and moving $num")
+        //        println(s"$p turning $turn and moving $num")
         val newHeading = turn match {
           case "L" => DayOne.turnLeft(p.heading)
           case "R" => DayOne.turnRight(p.heading)

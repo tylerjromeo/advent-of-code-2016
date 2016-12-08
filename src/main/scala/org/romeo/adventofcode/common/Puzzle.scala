@@ -20,6 +20,7 @@ abstract class Puzzle(inputUrl: String) {
   def run(): Unit = {
     webReader.content match {
       case Right(x) => {
+        validateInput(x)
         println(s"Part one's answer is ${solvePart1(x)}")
         println(s"Part two's answer is ${solvePart2(x)}")
       }
@@ -27,6 +28,23 @@ abstract class Puzzle(inputUrl: String) {
     }
   }
 
+  /**
+    * read the problem's input and crash hard if it's invalid
+    * @param input
+    */
+  def validateInput(input: String): Unit
+
+  /**
+    * solve part 1 of the day's problem
+    * @param input
+    * @return
+    */
   def solvePart1(input: String): String
+
+  /**
+    * solve part 2 of the day's problem
+    * @param input
+    * @return
+    */
   def solvePart2(input: String): String
 }
