@@ -19,10 +19,14 @@ abstract class Puzzle(inputUrl: String) {
 
   def run(): Unit = {
     webReader.content match {
-      case Right(x) => println(solve(x))
+      case Right(x) => {
+        println(s"Part one's answer is ${solvePart1(x)}")
+        println(s"Part two's answer is ${solvePart2(x)}")
+      }
       case Left(e) => println(e)
     }
   }
 
-  def solve(input: String): String
+  def solvePart1(input: String): String
+  def solvePart2(input: String): String
 }

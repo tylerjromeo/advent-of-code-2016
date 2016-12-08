@@ -55,7 +55,7 @@ object DayOne {
 
 class DayOne extends Puzzle("http://adventofcode.com/2016/day/1/input") {
 
-  override def solve(input: String): String = {
+  override def solvePart1(input: String): String = {
 
     val directions = input.split(", ").map(_.splitAt(1))
     assert(directions.forall{
@@ -78,4 +78,6 @@ class DayOne extends Puzzle("http://adventofcode.com/2016/day/1/input") {
 
     s"${math.abs(finalLocation.location._1) + math.abs(finalLocation.location._2)}"
   }
+
+  override def solvePart2(input: String): String = ???
 }
