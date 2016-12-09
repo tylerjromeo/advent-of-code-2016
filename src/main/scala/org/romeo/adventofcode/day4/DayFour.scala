@@ -21,6 +21,28 @@ object DayFour {
       Room(name, segments.head.toInt, split(1))
     }).toList
   }
+
+  def calculateChecksum(name: String): String = {
+    val characterCounts = name.foldLeft(Map[Char, Int]())((acc, c) => {
+      acc + (c -> (acc.getOrElse(c, 0) + 1))
+    })
+    characterCounts.toList.sortWith {
+      case ((c1, i1), (c2, i2)) => if (i1 == i2) c1 < c2 else i1 > i2
+    }.foldLeft("")(_ + _._1).take(5)
+  }
+
+  def decryptRoomName(name: String, rotCypher: Int): String = {
+    val realCypher = rotCypher % 26
+    name.map(rotateChar(_, realCypher))
+  }
+
+  def rotateChar(char: Char, n: Int): Char = {
+    val newChar = (char + n).toChar
+    if (newChar > 'z')
+      (newChar - 26).toChar
+    else
+      newChar
+  }
 }
 
 case class Room(name: String, id: Int, checksum: String)
@@ -42,7 +64,9 @@ class DayFour extends Puzzle("http://adventofcode.com/2016/day/4/input") {
     * @return
     */
   override def solvePart1(input: String): String = {
-    ""
+    DayFour.parseInput(input).filter(r => {
+      r.checksum == DayFour.calculateChecksum(r.name)
+    }).foldLeft(0)(_ + _.id).toString
   }
 
   /**
@@ -51,5 +75,11 @@ class DayFour extends Puzzle("http://adventofcode.com/2016/day/4/input") {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    val targets = List("north", "pole", "object", "objects")
+    val matches = DayFour.parseInput(input).filter(room => {
+      targets.exists(t => DayFour.decryptRoomName(room.name, room.id).contains(t))
+    })
+    s"Possible matches are: $matches\ntry ids: ${matches.map(_.id)}"
+  }
 }
