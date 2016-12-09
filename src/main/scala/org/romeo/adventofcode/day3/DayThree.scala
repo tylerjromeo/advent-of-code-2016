@@ -13,10 +13,16 @@ object DayThree {
     new DayThree().run()
   }
 
-  def splitInput(input: String): List[List[Int]] = {
+  def splitInputPartOne(input: String): List[List[Int]] = {
     input.trim.split("\n").map(_.trim.split("\\s+")
       .map(_.toInt)
       .toList).toList
+  }
+
+  def splitInputPartTwo(input: String): List[List[Int]] = {
+    splitInputPartOne(input).grouped(3).flatMap(block => {
+      block.transpose
+    }).toList
   }
 
   /**
@@ -38,7 +44,8 @@ class DayThree extends Puzzle("http://adventofcode.com/2016/day/3/input") {
     * @param input
     */
   override def validateInput(input: String): Unit = {
-    assert(DayThree.splitInput(input).forall(_.size == 3))
+    assert(DayThree.splitInputPartOne(input).forall(_.size == 3))
+    assert(DayThree.splitInputPartTwo(input).forall(_.size == 3))
   }
 
   /**
@@ -48,7 +55,7 @@ class DayThree extends Puzzle("http://adventofcode.com/2016/day/3/input") {
     * @return
     */
   override def solvePart1(input: String): String = {
-    DayThree.splitInput(input).count(DayThree.isTriangle).toString
+    DayThree.splitInputPartOne(input).count(DayThree.isTriangle).toString
   }
 
   /**
@@ -57,5 +64,7 @@ class DayThree extends Puzzle("http://adventofcode.com/2016/day/3/input") {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    DayThree.splitInputPartTwo(input).count(DayThree.isTriangle).toString
+  }
 }
