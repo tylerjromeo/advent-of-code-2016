@@ -18,6 +18,10 @@ object DayFive {
   def hash(src: String): String = {
     MessageDigest.getInstance("MD5").digest(src.getBytes).map("%02X" format _).mkString
   }
+
+  def takeElementFromRight[A](tuple: (Stream[A], Stream[A])): List[A] = {
+    tuple._1.toList ++ tuple._2.take(1)
+  }
 }
 
 class DayFive extends Puzzle("http://adventofcode.com/2016/day/5/input") {
@@ -37,12 +41,12 @@ class DayFive extends Puzzle("http://adventofcode.com/2016/day/5/input") {
     * @return
     */
   override def solvePart1(input: String): String = {
-    val specialPrefix = "00000"
-    val matchingHashes = Stream.from(0).map(n => DayFive.hash(input + n))
-      .filter(_.startsWith(specialPrefix))
+        val specialPrefix = "00000"
+        lazy val matchingHashes = Stream.from(0).map(n => DayFive.hash(input + n))
+          .filter(_.startsWith(specialPrefix))
 
-    println("This could take a minute, hold on")
-    matchingHashes.take(8).map(_.charAt(5)).mkString
+        println("This could take a few minutes, hold on")
+        matchingHashes.take(8).map(_.charAt(5)).mkString
   }
 
   /**
@@ -54,8 +58,35 @@ class DayFive extends Puzzle("http://adventofcode.com/2016/day/5/input") {
   override def solvePart2(input: String): String = {
     val specialPrefix = "00000"
     val matchingHashes = Stream.from(0).map(n => DayFive.hash(input + n))
-      .filter(_.startsWith(specialPrefix))
+      .filter(s => s.startsWith(specialPrefix) && s(5).asDigit < 8)
 
-    println("This could take a minute, hold on")
+    println("This could take a few minutes, hold on")
+    //for all of the matching hashes, build up an accumulated set of which positions we have covered
+    DayFive.takeElementFromRight(matchingHashes.scanLeft((Set[Int](), "")) {
+      case ((acc, _), newString) => (acc + newString(5).asDigit, newString)
+    }
+      //ignore the first value, since it just has the initial empty string and set in it
+      .tail
+      //keep getting hashes until we have at least 1 for each index, put those on the left, put the rest on the right
+      //takewhile stops as soon as the condition is filled, and we need that last element, so we need to get it from the right side
+      .span {
+      case (numbers, s) => !(0 to 7).forall(numbers.contains)
+    })
+      // remove the set accumulation, and convert to tuples of (index, value)
+      .map {
+      case (_, s) => {
+        val index = s(5).asDigit
+        (index, s(6))
+      }
+    }
+      // remove all but the first value encountered for each index
+      .foldLeft(List[(Int, Char)]()) {
+      case (acc, (index, value)) => {
+        if (acc.exists { case (i, _) => i == index })
+          acc
+        else
+          (index, value) :: acc
+      }
+    }.sortBy(_._1).map(_._2).mkString
   }
 }
