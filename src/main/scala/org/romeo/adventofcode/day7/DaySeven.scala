@@ -20,6 +20,19 @@ object DaySeven {
       s(0) != s(1)
   }
 
+  def isAba(s: String): Boolean = {
+    s.length == 3 &&
+      s(0) == s(2) &&
+      s(0) != s(1)
+  }
+
+  def isBabForAba(s: String, aba: String) = {
+    s.length == 3 &&
+      s(0) == aba(1) &&
+      s(1) == aba(0) &&
+      s(2) == aba(1)
+  }
+
   def parseIp(ip: String): Ip = {
     var nonBrackets = List[String]()
     var brackets = List[String]()
@@ -34,12 +47,20 @@ object DaySeven {
     Ip(nonBrackets, brackets)
   }
 
+  def supportsSsl(ip: Ip): Boolean = {
+    val abas = ip.nonBracket.flatMap(_.sliding(3)).filter(isAba)
+    val potentialBabs = ip.bracket.flatMap(_.sliding(3))
+    abas.exists(aba => potentialBabs.exists(bab => isBabForAba(bab, aba)))
+  }
+
   def supportsTls(ip: Ip): Boolean = {
     ip.bracket.flatMap(_.sliding(4)).forall(!isAbba(_)) &&
       ip.nonBracket.flatMap(_.sliding(4)).exists(isAbba)
   }
 
   def supportsTlsString = supportsTls _ compose parseIp
+
+  def supportsSslString = supportsSsl _ compose parseIp
 }
 
 case class Ip(nonBracket: List[String], bracket: List[String])
@@ -71,5 +92,8 @@ class DaySeven extends Puzzle("http://adventofcode.com/2016/day/7/input") {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    val ips = input.trim.split("\n")
+    ips.count(DaySeven.supportsSslString).toString
+  }
 }
