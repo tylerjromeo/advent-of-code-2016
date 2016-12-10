@@ -111,6 +111,8 @@ class DayEight extends Puzzle("http://adventofcode.com/2016/day/8/input") {
     * @return
     */
   override def solvePart2(input: String): String = {
-    ""
+    val screen = new Screen(50, 6)
+    input.split("\n").map(DayEight.parseInstruction).foreach(screen.execute)
+    screen.toString
   }
 }
