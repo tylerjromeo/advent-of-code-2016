@@ -14,9 +14,21 @@ object DaySix {
   }
 
   def mode[A](l: List[A]): A = {
-    l.groupBy(identity).mapValues(_.size).maxBy{case ((_, s)) => s}._1
+    l.groupBy(identity).mapValues(_.size).maxBy { case ((_, s)) => s }._1
+  }
+
+  /**
+    * returns the least common item in a list
+    *
+    * @param l
+    * @tparam A
+    * @return
+    */
+  def antimode[A](l: List[A]): A = {
+    l.groupBy(identity).mapValues(_.size).minBy { case ((_, s)) => s }._1
   }
 }
+
 class DaySix extends Puzzle("http://adventofcode.com/2016/day/6/input") {
   /**
     * read the problem's input and crash hard if it's invalid
@@ -35,14 +47,14 @@ class DaySix extends Puzzle("http://adventofcode.com/2016/day/6/input") {
     * @param input
     * @return
     */
-override def solvePart1(input: String): String = {
-  val split = input.split("\n")
-  val nColumns = split.head.length
-  val columns = split.foldLeft(List.fill(nColumns)(List[Char]()))((acc, s) => {
-    acc.zip(s).map{case ((l, c)) => c :: l}
-  })
-  columns.map(DaySix.mode).mkString
-}
+  override def solvePart1(input: String): String = {
+    val split = input.split("\n")
+    val nColumns = split.head.length
+    val columns = split.foldLeft(List.fill(nColumns)(List[Char]()))((acc, s) => {
+      acc.zip(s).map { case ((l, c)) => c :: l }
+    })
+    columns.map(DaySix.mode).mkString
+  }
 
   /**
     * solve part 2 of the day's problem
@@ -50,5 +62,12 @@ override def solvePart1(input: String): String = {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    val split = input.split("\n")
+    val nColumns = split.head.length
+    val columns = split.foldLeft(List.fill(nColumns)(List[Char]()))((acc, s) => {
+      acc.zip(s).map { case ((l, c)) => c :: l }
+    })
+    columns.map(DaySix.antimode).mkString
+  }
 }
