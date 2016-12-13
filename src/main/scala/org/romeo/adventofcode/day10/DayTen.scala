@@ -1,13 +1,12 @@
 package org.romeo.adventofcode.day10
 
-import akka.actor.{Actor, ActorRef, ActorSystem, Props, Inbox}
+import akka.actor.{Actor, ActorRef, ActorSystem, Inbox, Props}
 import akka.pattern.ask
 import akka.util.Timeout
 import org.romeo.adventofcode.common.Puzzle
 
-import scala.concurrent.{Await, Future}
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
   * User: tylerromeo
@@ -15,18 +14,25 @@ import scala.concurrent.ExecutionContext.Implicits.global
   * Time: 9:56 AM
   *
   */
+// This got really really ugly and I had to cheat with state a little bit. But I learned about Actors so that's cool.
 object DayTen {
   def main(args: Array[String]): Unit = {
     new DayTen().run()
   }
 
-  def generateGiveFunction(lowTarget: String, highTarget: String): (Int, Int) => List[GiveChip] = {
+  def generateGiveFunction(lowTarget: Target, highTarget: Target): (Int, Int) => List[BotInstruction] = {
     (chip1, chip2) => {
       val lowChip = if (chip1 < chip2) chip1 else chip2
       val highChip = if (chip1 < chip2) chip2 else chip1
+      def buildCommand(target: Target, chipNum: Int): BotInstruction = {
+        target match {
+          case BotTarget(id) => GiveChip(id, chipNum)
+          case OutputTarget(id) => OutputChip(id, chipNum)
+        }
+      }
       List(
-        GiveChip(lowTarget, lowChip),
-        GiveChip(highTarget, highChip)
+        buildCommand(lowTarget, lowChip),
+        buildCommand(highTarget, highChip)
       )
     }
   }
@@ -39,16 +45,25 @@ object DayTen {
         //      } else if(s.startsWith("bot")) { //we can assume it starts with "bot" if not "value"
       } else {
         val split = s.split(" ")
-        SetFunction(split(1), generateGiveFunction(split(6), split(11))).asInstanceOf[BotInstruction]
+        val target1 = if(split(5) == "output") OutputTarget(split(6)) else BotTarget(split(6))
+        val target2 = if(split(10) == "output") OutputTarget(split(11)) else BotTarget(split(11))
+        SetFunction(split(1), generateGiveFunction(target1, target2))
       }
     }).toList
   }
+
+  //I know this is cheating.
+  val globalOutputBin: scala.collection.mutable.Map[String, List[Int]] = scala.collection.mutable.Map[String, List[Int]]()
 }
+
+sealed class Target(id: String)
+case class BotTarget(id: String) extends Target(id)
+case class OutputTarget(id: String) extends Target(id)
 
 class Bot extends Actor {
   private var chip1: Option[Int] = None
   private var chip2: Option[Int] = None
-  private var giveFunc: Option[(Int, Int) => List[GiveChip]] = None
+  private var giveFunc: Option[(Int, Int) => List[BotInstruction]] = None
 
   override def receive: Receive = {
     case GiveChip(_, x) => {
@@ -87,8 +102,16 @@ class Bot extends Actor {
     sender ! None
   }
 
-  def send(instruction: GiveChip) = {
-    context.actorSelection(s"../${instruction.id}") ! instruction
+  def send(instruction: BotInstruction) = instruction match {
+    case GiveChip(id, _) => context.actorSelection(s"../$id") ! instruction
+    case OutputChip(id, _) => context.actorOf(Props[OutputBin]) ! instruction
+  }
+}
+
+
+class OutputBin extends Actor {
+  override def receive: Receive = {
+    case OutputChip(id, chip) => DayTen.globalOutputBin += (id -> (chip :: DayTen.globalOutputBin.getOrElse(id, List[Int]())))
   }
 }
 
@@ -117,11 +140,11 @@ class Supervisor(lowTarget: Int, highTarget: Int) extends Actor {
           }
         }
       }
-      //then send the instructions and await the results
-      val results = Future.sequence(instructions.map {
-        case GiveChip(id, i) => context.actorSelection(id) ? GiveChip(id, i)
-        case SetFunction(id, f) => context.actorSelection(id) ? SetFunction(id, f)
-      })
+      //then send the instructions
+      instructions.foreach {
+        case GiveChip(id, i) => context.actorSelection(id) ! GiveChip(id, i)
+        case SetFunction(id, f) => context.actorSelection(id) ! SetFunction(id, f)
+      }
     }
     case (id:String, chip1:Int, chip2:Int) => {
       if((chip1 == lowTarget && chip2 == highTarget) || (chip2 == lowTarget && chip1 == highTarget)) {
@@ -134,8 +157,9 @@ class Supervisor(lowTarget: Int, highTarget: Int) extends Actor {
 trait BotInstruction
 
 case class GiveChip(id: String, chip: Int) extends BotInstruction
+case class OutputChip(id: String, chip: Int) extends BotInstruction
 
-case class SetFunction(id: String, f: (Int, Int) => List[GiveChip]) extends BotInstruction
+case class SetFunction(id: String, f: (Int, Int) => List[BotInstruction]) extends BotInstruction
 
 
 class DayTen extends Puzzle("http://adventofcode.com/2016/day/10/input") {
@@ -173,5 +197,14 @@ class DayTen extends Puzzle("http://adventofcode.com/2016/day/10/input") {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    implicit val timeout = Timeout(1.minute)
+    val (lowTarget, highTarget) = (17, 61)
+    val system = ActorSystem("BotSystem")
+    implicit val i = Inbox.create(system)
+    val result = system.actorOf(Props(new Supervisor(lowTarget, highTarget)), "supervisor") ? (lowTarget, highTarget, input)
+    val resultString = Await.result(result, timeout.duration).toString
+    system.terminate()
+    (DayTen.globalOutputBin("0").head * DayTen.globalOutputBin("1").head * DayTen.globalOutputBin("2").head).toString
+  }
 }
