@@ -163,5 +163,27 @@ class DayEleven extends Puzzle("http://adventofcode.com/2016/day/11/input") {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    val parsedState = DayEleven.parseBuilding(input)
+    val initialState = new Building(0, Floor(
+      parsedState.floors.head.contents
+        + Generator("elerium")
+        + Microchip("elerium")
+        + Generator("dilithium")
+        + Microchip("dilithium")
+    ) :: parsedState.floors.tail
+    )
+    var matchFound = false
+    var count = 0
+    var state = Set(initialState)
+    var checkedStates = Set[Building]() //keep track of states we've already iterated on so they don't get hit twice
+    while (!matchFound) {
+      // TODO: while loop is cheating, I should use a Stream. Come back and update
+      count = count + 1
+      checkedStates = checkedStates ++ state
+      state = state.flatMap(_.generatePossibleMoves()) -- checkedStates
+      matchFound = state.exists(_.isComplete())
+    }
+    count.toString
+  }
 }
