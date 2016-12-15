@@ -29,10 +29,10 @@ object DayThirteen {
   def validMoves(f: (Int, Int) => Space, coords: (Int, Int)): Set[(Int, Int)] = {
     val (x, y) = coords
     Set(
-      (x-1, y),
-      (x+1, y),
-      (x, y+1),
-      (x, y-1)
+      (x - 1, y),
+      (x + 1, y),
+      (x, y + 1),
+      (x, y - 1)
     ).filter(f.tupled(_) == Open)
   }
 }
@@ -68,7 +68,7 @@ class DayThirteen extends Puzzle("http://adventofcode.com/2016/day/13/input") {
     var checkedPaths = scala.collection.mutable.Set[(Int, Int)]()
     var paths = Set(startCoords)
     var matchFound = false
-    while(!matchFound){
+    while (!matchFound) {
       count = count + 1
       checkedPaths ++= paths
       paths = paths.flatMap(DayThirteen.validMoves(spaceFunction, _)) -- checkedPaths
@@ -83,5 +83,14 @@ class DayThirteen extends Puzzle("http://adventofcode.com/2016/day/13/input") {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    val startCoords = (1, 1)
+    val spaceFunction = DayThirteen.spaceFunction(input.toInt)
+    val maxReach = 50
+    val allPaths = scala.collection.mutable.ListBuffer(Set(startCoords))
+    for (i <- 0 until maxReach) {
+      allPaths += allPaths.last.flatMap(DayThirteen.validMoves(spaceFunction, _))
+    }
+    allPaths.flatten.distinct.size.toString
+  }
 }
