@@ -20,7 +20,7 @@ object DayTwelve {
       instruction match {
         case "cpy" => {
           val (value, target) = (split(1), split(2))
-          if(value.forall(c => c.isDigit || c == '-')) {
+          if (value.forall(c => c.isDigit || c == '-')) {
             CopyValue(value.toInt, target)
           } else {
             CopyRegister((c: Computer) => c.getValue(value), target)
@@ -30,7 +30,7 @@ object DayTwelve {
         case "dec" => Dec(split(1))
         case "jnz" => {
           val (value, moves) = (split(1), split(2))
-          if(value.forall(c => c.isDigit || c == '-')) {
+          if (value.forall(c => c.isDigit || c == '-')) {
             JumpNonZeroValue(value.toInt, moves.toInt)
           } else {
             JumpNonZeroRegister((c: Computer) => c.getValue(value), moves.toInt)
@@ -40,6 +40,34 @@ object DayTwelve {
       }
     }).toList
   }
+
+  def executeInstructions(instructions: List[Instruction], initialState: Computer): Computer = {
+    var computer = initialState
+    var count = 0
+    while (count < instructions.size) {
+      val i = instructions(count)
+      computer = i match {
+        case CopyValue(v, t) => new Computer(computer.registers + (t -> Register(v)))
+        case CopyRegister(f, t) => new Computer(computer.registers + (t -> Register(f(computer))))
+        case Inc(t) => new Computer(computer.registers + (t -> Register(computer.getValue(t) + 1)))
+        case Dec(t) => new Computer(computer.registers + (t -> Register(computer.getValue(t) - 1)))
+        case JumpNonZeroValue(v, m) => {
+          if (v != 0) {
+            count = count + m - 1 //minus 1 since we count up by 1 at the end of the loop
+          }
+          computer
+        }
+        case JumpNonZeroRegister(f, m) => {
+          if (f(computer) != 0) {
+            count = count + m - 1 //minus 1 since we count up by 1 at the end of the loop
+          }
+          computer
+        }
+      }
+      count = count + 1
+    }
+    computer
+  }
 }
 
 case class Register(value: Int = 0)
@@ -47,6 +75,7 @@ case class Register(value: Int = 0)
 sealed trait Instruction
 
 case class CopyValue(value: Int, target: String) extends Instruction
+
 case class CopyRegister(value: Computer => Int, targetId: String) extends Instruction
 
 case class Inc(targetId: String) extends Instruction
@@ -54,6 +83,7 @@ case class Inc(targetId: String) extends Instruction
 case class Dec(targetId: String) extends Instruction
 
 case class JumpNonZeroValue(checkValue: Int, move: Int) extends Instruction
+
 case class JumpNonZeroRegister(checkValue: Computer => Int, move: Int) extends Instruction
 
 class Computer(val registers: Map[String, Register]) {
@@ -81,36 +111,13 @@ class DayTwelve extends Puzzle("http://adventofcode.com/2016/day/12/input") {
     */
   override def solvePart1(input: String): String = {
     val instructions = DayTwelve.parseInput(input)
-    var computer = new Computer(Map(
+    val computer = new Computer(Map(
       "a" -> Register(),
       "b" -> Register(),
       "c" -> Register(),
       "d" -> Register()
     ))
-    var count = 0
-    while(count < instructions.size) {
-      val i = instructions(count)
-      computer = i match {
-        case CopyValue(v, t) => new Computer(computer.registers + (t -> Register(v)))
-        case CopyRegister(f, t) => new Computer(computer.registers + (t -> Register(f(computer))))
-        case Inc(t) => new Computer(computer.registers + (t -> Register(computer.getValue(t) + 1)))
-        case Dec(t) => new Computer(computer.registers + (t -> Register(computer.getValue(t) - 1)))
-        case JumpNonZeroValue(v, m) => {
-          if(v != 0) {
-            count = count + m - 1 //minus 1 since we count up by 1 at the end of the loop
-          }
-          computer
-        }
-        case JumpNonZeroRegister(f, m) => {
-          if(f(computer) != 0) {
-            count = count + m - 1 //minus 1 since we count up by 1 at the end of the loop
-          }
-          computer
-        }
-      }
-      count = count + 1
-    }
-    computer.registers("a").value.toString
+    DayTwelve.executeInstructions(instructions, computer).registers("a").value.toString
   }
 
   /**
@@ -119,5 +126,14 @@ class DayTwelve extends Puzzle("http://adventofcode.com/2016/day/12/input") {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    val instructions = DayTwelve.parseInput(input)
+    val computer = new Computer(Map(
+      "a" -> Register(),
+      "b" -> Register(),
+      "c" -> Register(1),
+      "d" -> Register()
+    ))
+    DayTwelve.executeInstructions(instructions, computer).registers("a").value.toString
+  }
 }
