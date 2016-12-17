@@ -15,8 +15,10 @@ object DayFourteen {
     new DayFourteen().run()
   }
 
+  val md5 = MessageDigest.getInstance("MD5")
+
   def hash(src: String): String = {
-    MessageDigest.getInstance("MD5").digest(src.getBytes).map("%02X" format _).mkString
+    md5.digest(src.getBytes).map("%02X" format _).mkString.toLowerCase
   }
 
   // returns a function that tests if a string contains ANY character i times in a row
@@ -67,7 +69,32 @@ class DayFourteen extends Puzzle("http://adventofcode.com/2016/day/14/input") {
     * @return
     */
   override def solvePart1(input: String): String = {
-    val hashes = Stream.from(0).map(i => (i, DayFourteen.hash(input.trim + i.toString)))
+//    val hashes = Stream.from(0).map(i => (i, DayFourteen.hash(input.trim + i.toString)))
+//    val possibleKeys = hashes.map{
+//      case (i, hash) => (i, hash, DayFourteen.findRepeat(3)(hash))
+//    }.filter(_._3.nonEmpty)
+//    val keys = possibleKeys.filter{
+//      case (i, hash, Some(repeat)) => hashes.slice(i + 1, i + 1001).exists{
+//        case (_, h) => DayFourteen.findRepeat(5)(h).contains(repeat)
+//      }
+//    }
+//    keys(63)._1.toString
+    ""
+  }
+
+  /**
+    * solve part 2 of the day's problem
+    *
+    * @param input
+    * @return
+    */
+  override def solvePart2(input: String): String = {
+    def superHash(string: String): String = {
+      (0 to 2016).foldLeft(string){
+        case (s, _) => DayFourteen.hash(s)
+      }
+    }
+    val hashes = Stream.from(0).map(i => (i, superHash(input.trim + i.toString)))
     val possibleKeys = hashes.map{
       case (i, hash) => (i, hash, DayFourteen.findRepeat(3)(hash))
     }.filter(_._3.nonEmpty)
@@ -77,13 +104,6 @@ class DayFourteen extends Puzzle("http://adventofcode.com/2016/day/14/input") {
       }
     }
     keys(63)._1.toString
-  }
 
-  /**
-    * solve part 2 of the day's problem
-    *
-    * @param input
-    * @return
-    */
-  override def solvePart2(input: String): String = ???
+  }
 }
