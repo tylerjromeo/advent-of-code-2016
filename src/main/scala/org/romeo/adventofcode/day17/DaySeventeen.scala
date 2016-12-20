@@ -32,9 +32,9 @@ case class Maze(size: (Int, Int), passcode: String) {
     val hash = DaySeventeen.hash(passcode + path.moves.map(_.letter).mkString)
     Set[Option[Move]](
       if (DaySeventeen.isUnlocked(hash(0)) && path.coord._1 != 0) Some(Up) else None,
-      if (DaySeventeen.isUnlocked(hash(1)) && path.coord._1 < size._2) Some(Down) else None,
+      if (DaySeventeen.isUnlocked(hash(1)) && path.coord._1 < size._1 - 1) Some(Down) else None,
       if (DaySeventeen.isUnlocked(hash(2)) && path.coord._2 != 0) Some(Left) else None,
-      if (DaySeventeen.isUnlocked(hash(3)) && path.coord._2 < size._1) Some(Right) else None
+      if (DaySeventeen.isUnlocked(hash(3)) && path.coord._2 < size._2 - 1) Some(Right) else None
     ).flatten
   }
 
@@ -97,7 +97,6 @@ class DaySeventeen extends Puzzle("http://adventofcode.com/2016/day/17/input") {
     */
   override def solvePart1(input: String): String = {
     val maze = Maze((4, 4), input.trim)
-//    val maze = Maze((4, 4), "kglvqrro")
     val paths = scala.collection.mutable.Queue(Path(List(), (0,0)))
     while (!maze.isSolved(paths.head.coord)) {
       val p = paths.dequeue()
@@ -113,5 +112,21 @@ class DaySeventeen extends Puzzle("http://adventofcode.com/2016/day/17/input") {
     * @param input
     * @return
     */
-  override def solvePart2(input: String): String = ???
+  override def solvePart2(input: String): String = {
+    val maze = Maze((4, 4), input.trim)
+    val paths = scala.collection.mutable.Stack(Path(List(), (0, 0)))
+    var longestPath = Path(List(), (0, 0))
+    while (paths.nonEmpty) {
+      val p = paths.pop()
+      if (maze.isSolved(p.coord)) {
+        if (p.moves.length > longestPath.moves.length) {
+          longestPath = p
+        }
+      } else {
+        val nextMoves = maze.possibleMoves(p)
+        paths.pushAll(nextMoves.map(p.nextPath))
+      }
+    }
+    longestPath.moves.length.toString
+  }
 }
